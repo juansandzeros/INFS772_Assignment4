@@ -145,19 +145,18 @@ def main():
     print selector.support_
     print selector.ranking_
     print("Optimal number of features : %d" % rfecv.n_features_)
+
     train_X_new = selector.transform(train_X)
-    print "train_X_new"
-    print train_X_new.shape
+    test_X_new = selector.transform(test_X) # for the test dataset, you need to also keep just the selected varibles
 
     # You code here: You need to then also convert test_X into test_X_new, which only include the selected variables. Hint:you get the variable names of the selected variables from train_X_new(call this list "selected_variables"), then you can do test_X_new = test_X[[selected_variables]]
-    all_features = [x for x in train_X.columns]
-    print "All features:"
-    print all_features
-    selected_variables = [f for f, s in zip(all_features, selector.support_) if s]
-    print "The selected features are: "
-    print selected_variables
-    test_X_new = test_X[selected_variables]
-    #print test_X_new
+    #all_features = [x for x in train_X.columns]
+    #print "All features:"
+    #print all_features
+    #selected_variables = [f for f, s in zip(all_features, selector.support_) if s]
+    #print "The selected features are: "
+    #print selected_variables
+    #test_X_new = test_X[selected_variables]
 
     # Step 6. Model fitting and evaluation.
     # 6.1 fit logistic regression
@@ -191,22 +190,22 @@ def main():
     model_linear = SVC(kernel = 'linear', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
     results = ms.cross_val_score(model_linear, X_train_std, train_y, cv=kfold, scoring="accuracy")
     print "linear results:"
-    print results
+    print results.mean()
     model_poly = SVC(kernel = 'poly', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
     results = ms.cross_val_score(model_poly, X_train_std, train_y, cv=kfold, scoring="accuracy")
     print "poly results:"
-    print results
+    print results.mean()
     model_rbf = SVC(kernel = 'rbf', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
     results = ms.cross_val_score(model_rbf, X_train_std, train_y, cv=kfold, scoring="accuracy")
     print "rbf results:"
-    print results
+    print results.mean()
     model_sigmoid = SVC(kernel = 'sigmoid', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
     results = ms.cross_val_score(model_sigmoid, X_train_std, train_y, cv=kfold, scoring="accuracy")
-    print "rbf results:"
-    print results
+    print "sigmoid results:"
+    print results.mean()
 
     print "fit models:"
-    model_rbf.fit(X_train_std, train_y)
+    model_sigmoid.fit(X_train_std, train_y)
     # make predictions
     pred_y = model.predict(X_test_std)
     print "The SVC classification results:"
