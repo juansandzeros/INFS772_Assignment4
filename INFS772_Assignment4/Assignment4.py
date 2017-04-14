@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn import model_selection as ms
+from sklearn.model_selection import GridSearchCV
 
 def read_data():
     df = pd.read_csv('credit.csv') # Please change this
@@ -128,7 +129,6 @@ def main():
     # Your code here. Please split your data into training vs test (ratio: 80 : 20)
     train_X, test_X, train_y, test_y = train_test_split(df[independent_vars], df[dependent_var], test_size=0.2, random_state=123)
 
-    print "step 5:"
     # Step 5. Variable selection using SVC with linear kernal regression model (see toolbox).
     train_X_new = None 
     test_X_new = None
@@ -146,17 +146,9 @@ def main():
     print selector.ranking_
     print("Optimal number of features : %d" % rfecv.n_features_)
 
+    # You code here: You need to then also convert test_X into test_X_new, which only include the selected variables. Hint:you get the variable names of the selected variables from train_X_new(call this list "selected_variables"), then you can do test_X_new = test_X[[selected_variables]]
     train_X_new = selector.transform(train_X)
     test_X_new = selector.transform(test_X) # for the test dataset, you need to also keep just the selected varibles
-
-    # You code here: You need to then also convert test_X into test_X_new, which only include the selected variables. Hint:you get the variable names of the selected variables from train_X_new(call this list "selected_variables"), then you can do test_X_new = test_X[[selected_variables]]
-    #all_features = [x for x in train_X.columns]
-    #print "All features:"
-    #print all_features
-    #selected_variables = [f for f, s in zip(all_features, selector.support_) if s]
-    #print "The selected features are: "
-    #print selected_variables
-    #test_X_new = test_X[selected_variables]
 
     # Step 6. Model fitting and evaluation.
     # 6.1 fit logistic regression
@@ -165,11 +157,11 @@ def main():
     """
     # prepare cross validation folds
     num_folds = 5
-    kfold = ms.StratifiedKFold(n_splits=num_folds)
-    model = LogisticRegression(penalty='l2', C=1, class_weight='balanced')
-    results = ms.cross_val_score(model, train_X_new, train_y, cv=kfold, scoring="accuracy")
-    print results
+    kfold = ms.StratifiedKFold(n_splits=num_folds)  
+    parameters = {'C': np.arange(10,110,10)}  
+    model = GridSearchCV(LogisticRegression(penalty='l2', class_weight="balanced"), parameters, cv=StratifiedKFold(train_y, 5), scoring= "accuracy")
     model.fit(train_X_new, train_y)
+    # make predictions
     pred_y = model.predict(test_X_new)
     print "The logistic regression classification results:"
     """ Your code here ... you need to print metrics.classification_report"""
@@ -179,33 +171,18 @@ def main():
     """
     Your code here.... You need to tune parameters first using 5-fold cross-validation (see INFS772_assign4.docx for details), and apply the final model to the test data set. Please remember to use the test dataset when evaluating the fitted model
     """
+    # prepare cross validation folds
     num_folds = 5
     kfold = ms.StratifiedKFold(n_splits=num_folds)
-    from sklearn.preprocessing import StandardScaler
     # in order to use RBF kernel, we need to standardize the training dataset. Actually, I would suggest to standardize data for all SVM algorithms
+    from sklearn.preprocessing import StandardScaler    
     scaler = StandardScaler()
     X_train_std = scaler.fit_transform(train_X_new)
     X_test_std = scaler.fit_transform(test_X_new)
     # fit a SVM model to the data
-    model_linear = SVC(kernel = 'linear', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
-    results = ms.cross_val_score(model_linear, X_train_std, train_y, cv=kfold, scoring="accuracy")
-    print "linear results:"
-    print results.mean()
-    model_poly = SVC(kernel = 'poly', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
-    results = ms.cross_val_score(model_poly, X_train_std, train_y, cv=kfold, scoring="accuracy")
-    print "poly results:"
-    print results.mean()
-    model_rbf = SVC(kernel = 'rbf', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
-    results = ms.cross_val_score(model_rbf, X_train_std, train_y, cv=kfold, scoring="accuracy")
-    print "rbf results:"
-    print results.mean()
-    model_sigmoid = SVC(kernel = 'sigmoid', C=1, class_weight='balanced', cache_size=7000, max_iter=100)
-    results = ms.cross_val_score(model_sigmoid, X_train_std, train_y, cv=kfold, scoring="accuracy")
-    print "sigmoid results:"
-    print results.mean()
-
-    print "fit models:"
-    model_sigmoid.fit(X_train_std, train_y)
+    parameters = {'kernel':('linear','rbf','poly','sigmoid'), 'C': np.arange(.1,1.1,.1)}  
+    model = GridSearchCV(SVC(class_weight='balanced', cache_size=7000, max_iter=100), parameters, cv=StratifiedKFold(train_y, 5), scoring= "accuracy")
+    model.fit(X_train_std, train_y)
     # make predictions
     pred_y = model.predict(X_test_std)
     print "The SVC classification results:"
